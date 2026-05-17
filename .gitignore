@@ -1,0 +1,10 @@
+# Arquivo Python (apenas referência local, não usado no site)
+dashboard_seguro.py
+
+# Imagens alternativas não usadas
+floyd-bg.jpeg
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
