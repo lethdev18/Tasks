@@ -821,14 +821,10 @@ async function fetchGmailPreview(messages) {
       const headers = d.payload.headers || [];
       const fromRaw = (headers.find(h=>h.name==='From')||{}).value || '—';
       const subject = (headers.find(h=>h.name==='Subject')||{}).value || '(sem assunto)';
-      const msgIdHeader = (headers.find(h=>h.name==='Message-ID')||{}).value || '';
       const from = fromRaw.replace(/<[^>]+>/,'').replace(/"/g,'').trim() || fromRaw;
       
-      let finalUrl = `https://mail.google.com/mail/u/0/#inbox/${d.id}`;
-      if (msgIdHeader) {
-        // A versão mobile web do Gmail ignora IDs diretos, então forçamos a busca pelo ID real do e-mail
-        finalUrl = `https://mail.google.com/mail/u/0/#search/rfc822msgid%3A${encodeURIComponent(msgIdHeader)}`;
-      }
+      // O Gmail na web agrupa por conversas. O link deve ser o threadId, e não o id individual da mensagem!
+      let finalUrl = `https://mail.google.com/mail/u/0/#inbox/${d.threadId}`;
 
       const el = document.createElement('a');
       el.className = 'gmail-item';
