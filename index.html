@@ -678,15 +678,19 @@ function initGsi() {
     scope: SCOPES,
     callback: onAccessToken,
   });
-  // Use sessionStorage only — never localStorage for tokens
-  const st = sessionStorage.getItem('wsd_token');
-  const se = sessionStorage.getItem('wsd_expires');
+  // Usando localStorage para manter o login mesmo após fechar o navegador
+  const st = localStorage.getItem('wsd_token');
+  const se = localStorage.getItem('wsd_expires');
   if (st && se && Date.now() < parseInt(se)) {
     accessToken = st;
     tokenExpires = parseInt(se);
     hideOverlay();
     fetchAllData();
     scheduleTokenRefresh();
+  } else if (localStorage.getItem('wsd_logged_in') === 'true') {
+    // Tenta avisar que precisa renovar se expirou
+    document.getElementById('token-status').innerHTML = 'Sessão expirada. Clique em Entrar no rodapé.';
+    document.getElementById('token-status').style.display = 'flex';
   }
 }
 
@@ -695,8 +699,9 @@ function login() { tokenClient.requestAccessToken({ prompt: 'consent' }); }
 function onAccessToken(resp) {
   if (resp.error) { toast('Erro na autorização: ' + resp.error, 'error'); return; }
   const exp = Date.now() + ((resp.expires_in || 3600) * 1000) - 120000;
-  sessionStorage.setItem('wsd_token', resp.access_token);
-  sessionStorage.setItem('wsd_expires', exp.toString());
+  localStorage.setItem('wsd_token', resp.access_token);
+  localStorage.setItem('wsd_expires', exp.toString());
+  localStorage.setItem('wsd_logged_in', 'true');
   accessToken = resp.access_token;
   tokenExpires = exp;
   hideOverlay();
@@ -733,7 +738,9 @@ function signOut() {
   showConfirm('Sair', 'Deseja realmente sair e desconectar sua conta Google?', (ok) => {
     if (!ok) return;
     if (accessToken) google.accounts.oauth2.revoke(accessToken, ()=>{});
-    sessionStorage.clear();
+    localStorage.removeItem('wsd_token');
+    localStorage.removeItem('wsd_expires');
+    localStorage.removeItem('wsd_logged_in');
     location.reload();
   });
 }
