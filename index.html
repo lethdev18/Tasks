@@ -252,7 +252,9 @@ main{max-width:1200px;margin:0 auto;padding:32px 36px 130px;display:flex;flex-di
 .gmail-item{
   display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:12px;
   background:rgba(79,172,254,.05);border:1px solid rgba(79,172,254,.12);
-  transition:var(--transition);animation:slideRight .4s cubic-bezier(0.2,.8,.2,1) backwards;cursor:pointer;text-decoration:none;
+  transition:var(--transition);animation:slideRight .4s cubic-bezier(0.2,.8,.2,1) backwards;
+  cursor:pointer;text-decoration:none;
+  position:relative;z-index:10;-webkit-tap-highlight-color:transparent;
 }
 .gmail-item:hover{background:rgba(79,172,254,.08);border-color:rgba(79,172,254,.2)}
 .gmail-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);flex-shrink:0;margin-top:4px;animation:pulseGlow 2s infinite alternate}
@@ -822,9 +824,7 @@ async function fetchGmailPreview(messages) {
       const el = document.createElement('a');
       el.className = 'gmail-item';
       el.style.animationDelay = (idx * 0.05) + 's';
-      el.href = `https://mail.google.com/mail/u/0/#inbox/${d.id}`;
-      el.target = '_blank';
-      el.rel = 'noopener noreferrer';
+      el.href = `https://mail.google.com/mail/u/0/#inbox/${m.id}`;
       el.innerHTML = `<div class="gmail-dot"></div><div class="gmail-body"><div class="gmail-from">${esc(from)}</div><div class="gmail-subject">${esc(subject)}</div></div>`;
       container.appendChild(el);
     });
