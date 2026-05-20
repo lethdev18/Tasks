@@ -797,16 +797,15 @@ async function fetchUserInfo() {
     nm.textContent = p.given_name || p.name; nm.style.display='block';
     so.style.display='block';
     
-    // Salva o email logado e força os links a usarem esta conta (authuser)
+    // Salva o email logado e força os links a usarem esta conta
     if (p.email) {
       currentUserEmail = p.email;
       document.querySelectorAll('a').forEach(a => {
-        if (a.href.includes('google.com') || a.href.includes('youtube.com')) {
-          try {
-            let u = new URL(a.href);
-            u.searchParams.set('authuser', p.email);
-            a.href = u.toString();
-          } catch(e){}
+        const href = a.href;
+        if (href.includes('google.com') || href.includes('youtube.com') || href.includes('gmail.com')) {
+          if (!href.includes('AccountChooser')) {
+            a.href = `https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(p.email)}&continue=${encodeURIComponent(href)}`;
+          }
         }
       });
     }
@@ -913,7 +912,9 @@ async function openEmailModal(messageId, subject, from, threadId) {
   document.getElementById('email-modal-body').innerHTML = '<div style="text-align:center;padding:30px;color:#666">Carregando e-mail de forma segura...</div>';
   
   let fallbackUrl = `https://mail.google.com/mail/u/0/#inbox/${threadId}`;
-  if (currentUserEmail) fallbackUrl = `https://mail.google.com/mail/?authuser=${encodeURIComponent(currentUserEmail)}#inbox/${threadId}`;
+  if (currentUserEmail) {
+    fallbackUrl = `https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(currentUserEmail)}&continue=${encodeURIComponent('https://mail.google.com/mail/u/0/#inbox/' + threadId)}`;
+  }
   document.getElementById('email-modal-link').href = fallbackUrl;
 
   try {
