@@ -258,9 +258,11 @@ main{max-width:1200px;margin:0 auto;padding:32px 36px 130px;display:flex;flex-di
 }
 .gmail-item:hover{background:rgba(79,172,254,.08);border-color:rgba(79,172,254,.2)}
 .gmail-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);flex-shrink:0;margin-top:4px;animation:pulseGlow 2s infinite alternate}
+.gmail-body{flex:1;min-width:0}
 .gmail-from{font-size:.78rem;font-weight:700;color:var(--blue);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
 .gmail-subject{font-size:.82rem;color:var(--soft);line-height:1.35}
-.gmail-body{flex:1;min-width:0}
+.gmail-ext-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:var(--muted);background:transparent;transition:var(--transition);flex-shrink:0}
+.gmail-ext-btn:hover{background:rgba(79,172,254,.15);color:var(--blue)}
 
 /* ── STATS ── */
 .stat-row{display:flex;gap:10px;margin-bottom:20px}
@@ -867,7 +869,21 @@ async function fetchGmailPreview(messages) {
       
       el.onclick = () => openEmailModal(d.id, subject, from, d.threadId);
       
-      el.innerHTML = `<div class="gmail-dot"></div><div class="gmail-body"><div class="gmail-from">${esc(from)}</div><div class="gmail-subject">${esc(subject)}</div></div>`;
+      let directUrl = `https://mail.google.com/mail/u/0/#inbox/${d.threadId}`;
+      if (currentUserEmail) {
+        directUrl = `https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(currentUserEmail)}&continue=${encodeURIComponent('https://mail.google.com/mail/u/0/#inbox/' + d.threadId)}`;
+      }
+      
+      el.innerHTML = `
+        <div class="gmail-dot"></div>
+        <div class="gmail-body">
+          <div class="gmail-from">${esc(from)}</div>
+          <div class="gmail-subject">${esc(subject)}</div>
+        </div>
+        <a href="${directUrl}" target="_blank" rel="noopener noreferrer" class="gmail-ext-btn" title="Abrir direto no site do Gmail" onclick="event.stopPropagation()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+      `;
       container.appendChild(el);
     });
   } catch(e) {
