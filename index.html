@@ -651,6 +651,7 @@ const SCOPES = [
 let accessToken = null;
 let tokenExpires = 0;
 let tokenClient;
+let currentUserEmail = '';
 let taskLists = [];
 let currentListId = null;
 let confirmCallback = null;
@@ -795,6 +796,20 @@ async function fetchUserInfo() {
     av.src = p.picture; av.style.display='block';
     nm.textContent = p.given_name || p.name; nm.style.display='block';
     so.style.display='block';
+    
+    // Salva o email logado e força os links a usarem esta conta (authuser)
+    if (p.email) {
+      currentUserEmail = p.email;
+      document.querySelectorAll('a').forEach(a => {
+        if (a.href.includes('google.com') || a.href.includes('youtube.com')) {
+          try {
+            let u = new URL(a.href);
+            u.searchParams.set('authuser', p.email);
+            a.href = u.toString();
+          } catch(e){}
+        }
+      });
+    }
   } catch(e){}
 }
 
@@ -896,7 +911,10 @@ async function openEmailModal(messageId, subject, from, threadId) {
   document.getElementById('email-modal-subject').textContent = subject;
   document.getElementById('email-modal-from').textContent = 'De: ' + from;
   document.getElementById('email-modal-body').innerHTML = '<div style="text-align:center;padding:30px;color:#666">Carregando e-mail de forma segura...</div>';
-  document.getElementById('email-modal-link').href = `https://mail.google.com/mail/u/0/#inbox/${threadId}`;
+  
+  let fallbackUrl = `https://mail.google.com/mail/u/0/#inbox/${threadId}`;
+  if (currentUserEmail) fallbackUrl = `https://mail.google.com/mail/?authuser=${encodeURIComponent(currentUserEmail)}#inbox/${threadId}`;
+  document.getElementById('email-modal-link').href = fallbackUrl;
 
   try {
     const res = await gFetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`);
