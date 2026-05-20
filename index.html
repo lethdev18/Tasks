@@ -248,11 +248,11 @@ main{max-width:1200px;margin:0 auto;padding:32px 36px 130px;display:flex;flex-di
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── GMAIL PREVIEW ── */
-.gmail-preview-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.gmail-preview-list{display:flex;flex-direction:column;gap:8px;margin-top:4px;max-height:280px;overflow-y:auto;padding-right:5px}
 .gmail-item{
   display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:12px;
   background:rgba(79,172,254,.05);border:1px solid rgba(79,172,254,.12);
-  transition:var(--transition);animation:slideRight .4s cubic-bezier(0.2,.8,.2,1) backwards;cursor:default;
+  transition:var(--transition);animation:slideRight .4s cubic-bezier(0.2,.8,.2,1) backwards;cursor:pointer;
 }
 .gmail-item:hover{background:rgba(79,172,254,.04);border-color:rgba(79,172,254,.1)}
 .gmail-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);flex-shrink:0;margin-top:4px;animation:pulseGlow 2s infinite alternate}
@@ -346,6 +346,7 @@ footer:hover{opacity:1}
   .hdr-right{justify-content:center; width:100%}
   .clock-wrap{align-items:center; margin-right:0}
   main{padding:20px 16px 80px}
+  .footer-auth{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:9999; background:rgba(15,15,20,0.85); padding:10px 18px; border-radius:14px; backdrop-filter:blur(10px); border:1px solid var(--border); opacity:1}
   .summary-row{grid-template-columns:1fr; gap:16px}
   .events-row{grid-template-columns:1fr; gap:16px}
   .two-col{grid-template-columns:1fr; gap:16px}
@@ -786,8 +787,8 @@ async function fetchGmailUnread() {
     document.getElementById('email-num').textContent = display;
     document.getElementById('email-sub').textContent = count===0 ? 'Caixa vazia 🎉' : `${display} na Caixa de Entrada`;
 
-    // Fetch last 5 unread for preview
-    await fetchGmailPreview(data.messages ? data.messages.slice(0,5) : []);
+    // Fetch up to 25 unread for preview
+    await fetchGmailPreview(data.messages ? data.messages.slice(0,25) : []);
   } catch(e) {
     document.getElementById('email-num').textContent = '!';
     document.getElementById('email-sub').textContent = 'Erro ao carregar';
@@ -815,7 +816,8 @@ async function fetchGmailPreview(messages) {
       const from = fromRaw.replace(/<[^>]+>/,'').replace(/"/g,'').trim() || fromRaw;
       const el = document.createElement('div');
       el.className = 'gmail-item';
-      el.style.animationDelay = (idx * 0.08) + 's';
+      el.style.animationDelay = (idx * 0.05) + 's';
+      el.onclick = () => window.open(`https://mail.google.com/mail/u/0/#inbox/${m.id}`, '_blank');
       el.innerHTML = `<div class="gmail-dot"></div><div class="gmail-body"><div class="gmail-from">${esc(from)}</div><div class="gmail-subject">${esc(subject)}</div></div>`;
       container.appendChild(el);
     });
