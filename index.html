@@ -823,7 +823,7 @@ async function fetchGmailPreview(messages) {
       const msgIdHeader = (headers.find(h=>h.name==='Message-ID')||{}).value || '';
       const from = fromRaw.replace(/<[^>]+>/,'').replace(/"/g,'').trim() || fromRaw;
       
-      let finalUrl = `https://mail.google.com/mail/u/0/#inbox/${m.id}`;
+      let finalUrl = `https://mail.google.com/mail/u/0/#inbox/${d.id}`;
       if (msgIdHeader) {
         // A versão mobile web do Gmail ignora IDs diretos, então forçamos a busca pelo ID real do e-mail
         finalUrl = `https://mail.google.com/mail/u/0/#search/rfc822msgid%3A${encodeURIComponent(msgIdHeader)}`;
