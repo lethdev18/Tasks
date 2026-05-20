@@ -817,7 +817,8 @@ async function fetchGmailPreview(messages) {
     }));
     container.innerHTML = '';
     details.forEach((d, idx) => {
-      const headers = d.payload?.headers || [];
+      if (!d || !d.payload || !d.id) return;
+      const headers = d.payload.headers || [];
       const fromRaw = (headers.find(h=>h.name==='From')||{}).value || '—';
       const subject = (headers.find(h=>h.name==='Subject')||{}).value || '(sem assunto)';
       const msgIdHeader = (headers.find(h=>h.name==='Message-ID')||{}).value || '';
