@@ -1350,9 +1350,10 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 // ════════════════════════════════════════════
 //  KINDLE
 // ════════════════════════════════════════════
-let kindleBooks = JSON.parse(localStorage.getItem('wsd_kindle')) || [
-  { title: 'Exemplo: Atomic Habits', cover: 'https://m.media-amazon.com/images/I/81bGKUa1e0L._AC_UF1000,1000_QL80_.jpg', progress: '42%' }
-];
+let kindleBooks = JSON.parse(localStorage.getItem('wsd_kindle'));
+if (!kindleBooks || !Array.isArray(kindleBooks)) {
+  kindleBooks = [];
+}
 
 function renderKindle() {
   const container = document.getElementById('kindle-list');
