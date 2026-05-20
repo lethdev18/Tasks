@@ -253,7 +253,7 @@ main{max-width:1200px;margin:0 auto;padding:32px 36px 130px;display:flex;flex-di
   display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:12px;
   background:rgba(79,172,254,.05);border:1px solid rgba(79,172,254,.12);
   transition:var(--transition);animation:slideRight .4s cubic-bezier(0.2,.8,.2,1) backwards;
-  cursor:pointer;text-decoration:none;
+  cursor:pointer;
   position:relative;z-index:10;-webkit-tap-highlight-color:transparent;
 }
 .gmail-item:hover{background:rgba(79,172,254,.08);border-color:rgba(79,172,254,.2)}
@@ -414,7 +414,27 @@ footer:hover{opacity:1}
           <input type="time" id="ev-end-time" value="10:00">
         </div>
       </div>
-      <button id="btn-save-event" class="btn-primary" onclick="submitEvent()">Criar no Google Agenda</button>
+      <div class="modal-row" style="margin-top:20px;justify-content:flex-end">
+        <button class="modal-close-btn" onclick="closeEventModal()">Cancelar</button>
+        <button id="btn-save-event" class="btn-primary" onclick="submitEvent()">Criar no Google Agenda</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="modal-overlay" id="email-modal-overlay" style="display:none">
+  <div class="modal" style="background:var(--card); border:1px solid var(--border-bright); border-radius:18px; width:90%; max-width:600px; max-height:85vh; display:flex; flex-direction:column; padding:28px; box-shadow:0 40px 100px rgba(0,0,0,.7);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <h3 style="margin:0;font-size:1.1rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="email-modal-subject">Carregando...</h3>
+      <button class="modal-close" onclick="closeEmailModal()">✕</button>
+    </div>
+    <div id="email-modal-from" style="font-size:0.85rem;color:var(--blue);margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid var(--border)"></div>
+    <div id="email-modal-body" style="flex:1;overflow-y:auto;font-size:0.9rem;line-height:1.5;background:#fff;color:#000;padding:15px;border-radius:8px;word-break:break-word;">
+      <!-- Email content -->
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px">
+      <a id="email-modal-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="text-decoration:none;text-align:center">Ver no site do Gmail</a>
     </div>
   </div>
 </div>
@@ -822,20 +842,79 @@ async function fetchGmailPreview(messages) {
       const fromRaw = (headers.find(h=>h.name==='From')||{}).value || '—';
       const subject = (headers.find(h=>h.name==='Subject')||{}).value || '(sem assunto)';
       const from = fromRaw.replace(/<[^>]+>/,'').replace(/"/g,'').trim() || fromRaw;
-      
-      // O Gmail na web agrupa por conversas. O link deve ser o threadId, e não o id individual da mensagem!
-      let finalUrl = `https://mail.google.com/mail/u/0/#inbox/${d.threadId}`;
 
-      const el = document.createElement('a');
+      const el = document.createElement('div');
       el.className = 'gmail-item';
       el.style.animationDelay = (idx * 0.05) + 's';
-      el.href = finalUrl;
+      
+      // Usa aspas duplas no onclick e scapa aspas simples das variaveis
+      const safeSubj = subject.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const safeFrom = from.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      
+      el.onclick = () => openEmailModal(d.id, subject, from, d.threadId);
+      
       el.innerHTML = `<div class="gmail-dot"></div><div class="gmail-body"><div class="gmail-from">${esc(from)}</div><div class="gmail-subject">${esc(subject)}</div></div>`;
       container.appendChild(el);
     });
   } catch(e) {
     container.innerHTML = `<div style="color:var(--rose);font-size:.82rem">Erro ao carregar prévia</div>`;
   }
+}
+
+// Helper para parsear o corpo do Gmail (decodifica base64url e busca a parte HTML/Texto)
+function getEmailBody(payload) {
+  let body = '';
+  if (payload.parts) {
+    const htmlPart = payload.parts.find(p => p.mimeType === 'text/html');
+    const textPart = payload.parts.find(p => p.mimeType === 'text/plain');
+    if (htmlPart && htmlPart.body.data) {
+      body = htmlPart.body.data;
+    } else if (textPart && textPart.body.data) {
+      body = textPart.body.data;
+    } else if (payload.parts.length > 0) {
+      for (let p of payload.parts) {
+        if (p.mimeType.startsWith('multipart/')) {
+          body = getEmailBody(p);
+          if (body) break;
+        }
+      }
+    }
+  } else if (payload.body && payload.body.data) {
+    body = payload.body.data;
+  }
+  
+  if (body) {
+    body = body.replace(/-/g, '+').replace(/_/g, '/');
+    try { body = decodeURIComponent(escape(window.atob(body))); } catch(e){}
+  }
+  return body || '<div style="color:#666">Conteúdo do e-mail não suportado para pré-visualização.</div>';
+}
+
+async function openEmailModal(messageId, subject, from, threadId) {
+  const overlay = document.getElementById('email-modal-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('email-modal-subject').textContent = subject;
+  document.getElementById('email-modal-from').textContent = 'De: ' + from;
+  document.getElementById('email-modal-body').innerHTML = '<div style="text-align:center;padding:30px;color:#666">Carregando e-mail de forma segura...</div>';
+  document.getElementById('email-modal-link').href = `https://mail.google.com/mail/u/0/#inbox/${threadId}`;
+
+  try {
+    const res = await gFetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    let htmlContent = getEmailBody(data.payload);
+    // Remove scripts maliciosos de emails por segurança
+    htmlContent = htmlContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    
+    document.getElementById('email-modal-body').innerHTML = htmlContent;
+  } catch(e) {
+    document.getElementById('email-modal-body').innerHTML = `<div style="color:var(--rose)">Erro ao carregar corpo do e-mail: ${e.message}</div>`;
+  }
+}
+
+function closeEmailModal() {
+  document.getElementById('email-modal-overlay').style.display = 'none';
 }
 
 // ════════════════════════════════════════════
